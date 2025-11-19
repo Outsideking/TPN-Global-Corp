@@ -1,0 +1,111 @@
+Repo: TGN_API_App
+
+รวม Backend FastAPI + Frontend Android + CI/CD deploy-ready
+
+-------------------
+
+backend/main.py
+
+-------------------
+
+from fastapi import FastAPI, Form from fastapi.responses import JSONResponse
+
+app = FastAPI(title="TGN API Backend")
+
+@app.post("/api/get-data") async def get_data(endpoint: str = Form(...), token: str = Form(...)): backend_url = f"https://sc-backend.example.com/{endpoint}" response_data = {"data": f"Fetched from {backend_url}"} return JSONResponse({"status":"success","result":response_data})
+
+-------------------
+
+backend/requirements.txt
+
+-------------------
+
+""" fastapi uvicorn requests """
+
+-------------------
+
+app/src/main/java/com/tgn/app/MainActivity.kt
+
+-------------------
+
+""" package com.tgn.app
+
+import android.os.Bundle import androidx.appcompat.app.AppCompatActivity import android.widget.Button import android.widget.EditText import android.widget.TextView
+
+class MainActivity : AppCompatActivity() { override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState) setContentView(R.layout.activity_main)
+
+val inputEndpoint = findViewById<EditText>(R.id.inputEndpoint)
+    val tokenInput = findViewById<EditText>(R.id.inputToken)
+    val sendBtn = findViewById<Button>(R.id.sendBtn)
+    val outputView = findViewById<TextView>(R.id.outputView)
+
+    sendBtn.setOnClickListener {
+        val endpoint = inputEndpoint.text.toString()
+        val token = tokenInput.text.toString()
+        val response = TGNAPI.callBackend(endpoint, token)
+        outputView.text = response
+    }
+}
+
+} """
+
+-------------------
+
+app/src/main/java/com/tgn/app/TGNAPI.kt
+
+-------------------
+
+""" package com.tgn.app
+
+object TGNAPI { fun callBackend(endpoint: String, token: String): String { return "[Sample Response] Endpoint: $endpoint, Token: $token" } } """
+
+-------------------
+
+app/src/main/res/layout/activity_main.xml
+
+-------------------
+
+""" <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:orientation="vertical" android:layout_width="match_parent"
+android:layout_height="match_parent" android:padding="16dp">
+
+<EditText
+    android:id="@+id/inputEndpoint"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="API Endpoint" />
+
+<EditText
+    android:id="@+id/inputToken"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="Token" />
+
+<Button
+    android:id="@+id/sendBtn"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Send" />
+
+<TextView
+    android:id="@+id/outputView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Response will appear here" />
+
+</LinearLayout>
+"""-------------------
+
+.github/workflows/backend-deploy.yml
+
+-------------------
+
+""" name: Deploy TGN Backend on: [push] jobs: deploy: runs-on: ubuntu-latest steps: - uses: actions/checkout@v3 - name: Setup Python uses: actions/setup-python@v4 with: python-version: '3.11' - run: pip install -r backend/requirements.txt - name: Deploy uses: easingthemes/ssh-deploy@v2.0.7 with: ssh-private-key: ${{ secrets.SERVER_SSH_KEY }} server-ip: ${{ secrets.SERVER_IP }} remote-path: /home/tgn/backend local-path: backend/ """
+
+-------------------
+
+.github/workflows/frontend-deploy.yml
+
+-------------------
+
+""" name: Deploy TGN Frontend on: [push] jobs: build: runs-on: ubuntu-latest steps: - uses: actions/checkout@v3 - name: Setup JDK uses: actions/setup-java@v3 with: java-version: '17' - name: Build APK run: ./gradlew assembleRelease - name: Upload APK uses: actions/upload-artifact@v3 with: name: TGN-App path: app/build/outputs/apk/release/app-release.apk """
